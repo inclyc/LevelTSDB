@@ -81,13 +81,18 @@ static TestStorage benchInsertion(int maxn) {
   return storage;
 }
 
+static void batchTest() {
+  for (uint32_t maxn = 100, log10 = 2; log10 < 9; log10++, maxn *= 10) {
+    std::cout << "Dataset size: " << maxn << std::endl;
+    auto storage = benchInsertion(maxn);
+    testCorrect(10000, maxn, storage);
+    benchQuery(10000, maxn, storage);
+    printMemoryUsage();
+    std::cout << std::endl;
+  }
+}
+
 int main() {
-  const int maxn = 1e8;
-
-  auto storage = benchInsertion(maxn);
-  testCorrect(10000, maxn, storage);
-  benchQuery(10000, maxn, storage);
-  printMemoryUsage();
-
+  batchTest();
   return 0;
 }
