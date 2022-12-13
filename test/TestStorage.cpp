@@ -63,13 +63,28 @@ static void benchQuery(uint32_t numCases, int maxn,
             << std::endl;
 }
 
-int main() {
-  const int maxn = 1e8;
+static TestStorage benchInsertion(int maxn) {
   TestStorage storage;
+  auto start = std::chrono::high_resolution_clock::now();
   for (int i = 1; i < maxn; i++) {
     storage.insert(i);
   }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = end - start;
+  std::cout << "Average time per insertion (ns): "
+            << static_cast<double>(
+                   std::chrono::duration_cast<std::chrono::nanoseconds>(
+                       duration)
+                       .count()) /
+                   maxn
+            << std::endl;
+  return storage;
+}
 
+int main() {
+  const int maxn = 1e8;
+
+  auto storage = benchInsertion(maxn);
   testCorrect(10000, maxn, storage);
   benchQuery(10000, maxn, storage);
   printMemoryUsage();
