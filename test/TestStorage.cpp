@@ -15,11 +15,10 @@ static void testCorrect(uint32_t numCases, int maxn,
 
   for (uint32_t i = 0; i < numCases; i++) {
     auto [l, r] = std::tuple{distr(gen), distr(gen)};
-    if (l > r) {
+    if (l > r)
       std::swap(l, r);
-    } else if (l == r) {
+    else if (l == r)
       continue;
-    }
     if (storage.query(l, r) != (r - l) * (l + r - 1) / 2) {
       std::cerr << "Failed :" << l << " " << r << std::endl;
       exit(-1);
