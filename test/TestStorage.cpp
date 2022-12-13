@@ -1,6 +1,7 @@
 #include "Data.h"
 #include "Testing/Testing.h"
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <random>
@@ -28,6 +29,38 @@ static void testCorrect(uint32_t numCases, int maxn,
   std::cout << "Correction test passed." << std::endl;
 }
 
+static void benchQuery(uint32_t numCases, int maxn,
+                       const TestStorage &storage) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<uint64_t> distr(1, maxn);
+
+  std::vector<std::tuple<uint32_t, uint32_t>> testCases;
+
+  for (uint32_t i = 0; i < numCases; i++) {
+    auto [l, r] = std::tuple{distr(gen), distr(gen)};
+    if (l > r)
+      std::swap(l, r);
+    else if (l == r)
+      continue;
+    testCases.push_back({l, r});
+  }
+  auto start = std::chrono::high_resolution_clock::now();
+  for (auto [l, r] : testCases) {
+    storage.query(l, r);
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = end - start;
+  std::cout << "Average time per query (ns): "
+            << static_cast<double>(
+                   std::chrono::duration_cast<std::chrono::nanoseconds>(
+                       duration)
+                       .count()) /
+                   numCases
+            << std::endl;
+}
+
 int main() {
   const int maxn = 1e8;
   TestStorage storage;
@@ -36,6 +69,7 @@ int main() {
   }
 
   testCorrect(10000, maxn, storage);
+  benchQuery(10000, maxn, storage);
   printMemoryUsage();
 
   return 0;
