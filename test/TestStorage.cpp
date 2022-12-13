@@ -37,12 +37,14 @@ static void benchQuery(uint32_t numCases, int maxn,
 
   std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
-  for (uint32_t i = 0; i < numCases; i++) {
+  for (uint32_t i = 1; i <= numCases; i++) {
     auto [l, r] = std::tuple{distr(gen), distr(gen)};
-    if (l > r)
+    if (l > r) {
       std::swap(l, r);
-    else if (l == r)
+    } else if (l == r) {
+      i--;
       continue;
+    }
     testCases.push_back({l, r});
   }
   auto start = std::chrono::high_resolution_clock::now();
