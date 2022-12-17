@@ -9,7 +9,7 @@ namespace LevelTSDB {
 
 using std::size_t;
 
-template <class T, template <class V> class Map> class Storage {
+template <class T, template <class> class Map> class Storage {
   std::vector<Map<T>> data;
   size_t maxtime;
 
