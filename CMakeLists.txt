@@ -8,12 +8,13 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS true)
 add_compile_options(-fno-exceptions)
 add_compile_options(-fno-rtti)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set (LOCAL_PROJECT_USE_ASAN On)
+string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
+if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+  option(LOCAL_PROJECT_USE_ASAN "Build with AddressSanitizer" On)
+else ()
+  option(LOCAL_PROJECT_USE_ASAN "Build with AddressSanitizer" Off)
 endif()
 
-
-option(LOCAL_PROJECT_USE_ASAN "Build with AddressSanitizer" Off)
 if(LOCAL_PROJECT_USE_ASAN)
   add_compile_options(-fsanitize=address -fsanitize=undefined)
   add_link_options(-fsanitize=address -fsanitize=undefined)
