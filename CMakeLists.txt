@@ -27,6 +27,14 @@ if(LOCAL_PROJECT_USE_TSAN)
   add_link_options(-fsanitize=thread)
 endif()
 
+if( PROJECT_USE_LINKER )
+  append("-fuse-ld=${PROJECT_USE_LINKER}"
+    CMAKE_EXE_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+  check_cxx_source_compiles("int main() { return 0; }" CXX_SUPPORTS_CUSTOM_LINKER)
+  if ( NOT CXX_SUPPORTS_CUSTOM_LINKER )
+    message(FATAL_ERROR "Host compiler does not support '-fuse-ld=${PROJECT_USE_LINKER}'")
+  endif()
+endif()
 
 # Enable warnings
 add_compile_options(-Wall -Wextra -pedantic)
