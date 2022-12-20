@@ -16,7 +16,7 @@ template <class T> class ArrayMap : public Map<T> {
   std::vector<T> data;
 
 public:
-  T &operator[](size_t x) override {
+  T &operator[](size_t x) {
     if (data.size() <= x) {
       data.resize(2 * x);
       data[x] = T();
