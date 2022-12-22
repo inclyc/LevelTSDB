@@ -3,6 +3,7 @@
 #include "Map.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <vector>
 
@@ -41,6 +42,9 @@ public:
     auto [p, v] = forwarding(l, r);
     return query(l + p, r) + v;
   }
+
+  uint32_t &cacheMiss() { return data[0].cacheMiss(); }
+  const uint32_t &cacheMiss() const { return data[0].cacheMiss(); }
 };
 
 } // namespace LevelTSDB

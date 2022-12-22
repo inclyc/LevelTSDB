@@ -33,6 +33,8 @@ public:
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> distr(1, maxn);
 
+    storage.cacheMiss() = 0;
+
     std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
     for (uint32_t i = 1; i <= numCases; i++) {
@@ -58,6 +60,10 @@ public:
                          duration)
                          .count()) /
                      numCases
+              << std::endl;
+
+    std::cout << "Cache Miss per query: "
+              << static_cast<double>(storage.cacheMiss()) / numCases
               << std::endl;
   }
 
@@ -98,7 +104,7 @@ int main() {
   using LevelTSDB::Storage;
   std::cout << "Testing: ArrayMap<uint64_t>"
             << "\n";
-  Test<Storage<uint64_t, ArrayMap<uint64_t>>>::batchTest(9);
+  Test<Storage<uint64_t, ArrayMap<uint64_t, 1000>>>::batchTest(9);
   std::cout << "Testing: LruMap<uint64_t, 10000>>"
             << "\n";
   Test<Storage<uint64_t, LruMap<uint64_t, 10000>>>::batchTest(8);
