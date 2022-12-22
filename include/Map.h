@@ -7,12 +7,16 @@
 
 namespace LevelTSDB {
 
+extern uint64_t lru_cache_miss;
+extern uint64_t arr_cache_miss;
+
 using std::size_t;
 
 template <class T> class Map {
 public:
   void set(size_t, T);
   T get(size_t);
+  uint64_t cacheMiss();
 };
 
 template <class T> class ArrayMap : public Map<T> {
@@ -30,6 +34,7 @@ private:
 public:
   T get(size_t x) { return this->operator[](x); }
   void set(size_t x, T value) { this->operator[](x) = value; }
+  uint64_t cacheMiss() { return LevelTSDB::arr_cache_miss; }
 };
 
 template <class T, class B> class Lru {
@@ -71,6 +76,7 @@ public:
   T get(size_t key) {
     auto it = mp.find(key);
     if (it == mp.end()) {
+      LevelTSDB::lru_cache_miss++;
       auto value = base.get(key);
       if (list.size() == cap) {
         base.set(list.back().key, list.back().value);
@@ -97,6 +103,7 @@ template <class T, int N> class LruMap : public Map<T> {
 public:
   T get(size_t key) { return cache.get(key); }
   void set(size_t key, T value) { cache.set(key, value); }
+  uint64_t cacheMiss() { return LevelTSDB::lru_cache_miss; }
 };
 
 }; // namespace LevelTSDB

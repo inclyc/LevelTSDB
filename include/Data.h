@@ -41,6 +41,8 @@ public:
     auto [p, v] = forwarding(l, r);
     return query(l + p, r) + v;
   }
+
+  uint64_t cacheMiss() { return data[0].cacheMiss(); }
 };
 
 } // namespace LevelTSDB

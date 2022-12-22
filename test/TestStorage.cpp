@@ -7,6 +7,11 @@
 #include <random>
 #include <sys/resource.h>
 
+namespace LevelTSDB {
+uint64_t lru_cache_miss;
+uint64_t arr_cache_miss;
+}; // namespace LevelTSDB
+
 template <class S> class Test {
 public:
   static void testCorrect(uint32_t numCases, int maxn, S &storage) {
@@ -35,6 +40,9 @@ public:
 
     std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
+    LevelTSDB::arr_cache_miss = 0;
+    LevelTSDB::lru_cache_miss = 0;
+
     for (uint32_t i = 1; i <= numCases; i++) {
       auto [l, r] = std::tuple{distr(gen), distr(gen)};
       if (l > r) {
@@ -43,6 +51,8 @@ public:
         i--;
         continue;
       }
+      LevelTSDB::arr_cache_miss += std::min(r, (uint64_t)maxn - 10000) -
+                                   std::min(l, (uint64_t)maxn - 10000);
       testCases.push_back({l, r});
     }
     auto start = std::chrono::high_resolution_clock::now();
@@ -59,6 +69,8 @@ public:
                          .count()) /
                      numCases
               << std::endl;
+
+    std::cout << "Cache Miss per query: " << storage.cacheMiss() << std::endl;
   }
 
   static S benchInsertion(int maxn) {
