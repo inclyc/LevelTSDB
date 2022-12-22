@@ -10,8 +10,8 @@ namespace LevelTSDB {
 
 using std::size_t;
 
-template <class T, template <class> class Map> class Storage {
-  std::vector<Map<T>> data;
+template <class T, class Map> class Storage {
+  std::vector<Map> data;
   size_t maxtime;
 
 public:
@@ -23,7 +23,7 @@ public:
   void insert(T value) {
     for (size_t lvl = 0, idx = maxtime; idx && lvl < 64; lvl++, idx >>= 1) {
       auto &line = data[lvl];
-      line[idx] += value;
+      line.set(idx, line.get(idx) + value);
     }
     maxtime++;
   }
@@ -31,7 +31,7 @@ public:
   std::tuple<size_t, T> forwarding(std::size_t l, std::size_t r) {
     size_t level = std::min(static_cast<size_t>(__builtin_ctz(l)),
                             static_cast<size_t>((log(r - l) / log(2))));
-    return {1 << level, data[level][l >> level]};
+    return {1 << level, data[level].get(l >> level)};
   }
 
   T query(std::size_t l, std::size_t r) {
