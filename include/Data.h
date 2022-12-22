@@ -43,7 +43,8 @@ public:
     return query(l + p, r) + v;
   }
 
-  uint64_t cacheMiss() { return data[0].cacheMiss(); }
+  uint32_t &cacheMiss() { return data[0].cacheMiss(); }
+  const uint32_t &cacheMiss() const { return data[0].cacheMiss(); }
 };
 
 } // namespace LevelTSDB

@@ -7,11 +7,6 @@
 #include <random>
 #include <sys/resource.h>
 
-namespace LevelTSDB {
-uint64_t lru_cache_miss;
-uint64_t arr_cache_miss;
-}; // namespace LevelTSDB
-
 template <class S> class Test {
 public:
   static void testCorrect(uint32_t numCases, int maxn, S &storage) {
@@ -38,10 +33,9 @@ public:
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> distr(1, maxn);
 
-    std::vector<std::tuple<uint32_t, uint32_t>> testCases;
+    storage.cacheMiss() = 0;
 
-    LevelTSDB::arr_cache_miss = 0;
-    LevelTSDB::lru_cache_miss = 0;
+    std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
     for (uint32_t i = 1; i <= numCases; i++) {
       auto [l, r] = std::tuple{distr(gen), distr(gen)};
@@ -51,8 +45,6 @@ public:
         i--;
         continue;
       }
-      LevelTSDB::arr_cache_miss += std::min(r, (uint64_t)maxn - 10000) -
-                                   std::min(l, (uint64_t)maxn - 10000);
       testCases.push_back({l, r});
     }
     auto start = std::chrono::high_resolution_clock::now();
@@ -70,7 +62,9 @@ public:
                      numCases
               << std::endl;
 
-    std::cout << "Cache Miss per query: " << storage.cacheMiss() << std::endl;
+    std::cout << "Cache Miss per query: "
+              << static_cast<double>(storage.cacheMiss()) / numCases
+              << std::endl;
   }
 
   static S benchInsertion(int maxn) {
@@ -110,7 +104,7 @@ int main() {
   using LevelTSDB::Storage;
   std::cout << "Testing: ArrayMap<uint64_t>"
             << "\n";
-  Test<Storage<uint64_t, ArrayMap<uint64_t>>>::batchTest(9);
+  Test<Storage<uint64_t, ArrayMap<uint64_t, 1000>>>::batchTest(9);
   std::cout << "Testing: LruMap<uint64_t, 10000>>"
             << "\n";
   Test<Storage<uint64_t, LruMap<uint64_t, 10000>>>::batchTest(8);
