@@ -7,9 +7,9 @@
 #include <random>
 #include <sys/resource.h>
 
-template <class TestStorage> class Test {
+template <class S> class Test {
 public:
-  static void testCorrect(uint32_t numCases, int maxn, TestStorage &storage) {
+  static void testCorrect(uint32_t numCases, int maxn, S &storage) {
     std::random_device rd;  // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
     std::uniform_int_distribution<uint64_t> distr(1, maxn); // define the range
@@ -28,7 +28,7 @@ public:
     std::cout << "Correction test passed." << std::endl;
   }
 
-  static void benchQuery(uint32_t numCases, int maxn, TestStorage &storage) {
+  static void benchQuery(uint32_t numCases, int maxn, S &storage) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> distr(1, maxn);
@@ -61,8 +61,8 @@ public:
               << std::endl;
   }
 
-  static TestStorage benchInsertion(int maxn) {
-    TestStorage storage;
+  static S benchInsertion(int maxn) {
+    S storage;
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 1; i < maxn; i++) {
       storage.insert(i);
