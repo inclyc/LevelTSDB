@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <list>
 #include <unordered_map>
 #include <vector>
@@ -15,8 +16,9 @@ public:
   T get(size_t);
 };
 
-template <class T> class ArrayMap : public Map<T> {
+template <class T, int N = 999999> class ArrayMap : public Map<T> {
   std::vector<T> data;
+  uint32_t _cacheMiss;
 
 private:
   T &operator[](size_t x) {
@@ -24,12 +26,17 @@ private:
       data.resize(2 * x);
       data[x] = T();
     }
+    if (data.size() > N && x < data.size() - N)
+      _cacheMiss++;
     return data[x];
   }
 
 public:
+  ArrayMap() : _cacheMiss(0) {}
   T get(size_t x) { return this->operator[](x); }
   void set(size_t x, T value) { this->operator[](x) = value; }
+  uint32_t &cacheMiss() { return _cacheMiss; }
+  const uint32_t &cacheMiss() const { return _cacheMiss; }
 };
 
 template <class T, class B> class Lru {
@@ -41,6 +48,8 @@ private:
   };
 
   size_t cap;
+
+  uint32_t _cacheMiss;
 
   std::list<Node> list;
   std::unordered_map<size_t, typename std::list<Node>::iterator> mp;
@@ -71,6 +80,7 @@ public:
   T get(size_t key) {
     auto it = mp.find(key);
     if (it == mp.end()) {
+      _cacheMiss++;
       auto value = base.get(key);
       if (list.size() == cap) {
         base.set(list.back().key, list.back().value);
@@ -89,6 +99,8 @@ public:
       return value;
     }
   }
+  uint32_t &cacheMiss() { return _cacheMiss; }
+  const uint32_t &cacheMiss() const { return _cacheMiss; }
 };
 
 template <class T, int N> class LruMap : public Map<T> {
@@ -97,6 +109,8 @@ template <class T, int N> class LruMap : public Map<T> {
 public:
   T get(size_t key) { return cache.get(key); }
   void set(size_t key, T value) { cache.set(key, value); }
+  uint32_t &cacheMiss() { return cache.cacheMiss(); }
+  const uint32_t &cacheMiss() const { return cache.cacheMiss(); }
 };
 
 }; // namespace LevelTSDB
