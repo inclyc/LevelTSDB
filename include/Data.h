@@ -15,6 +15,8 @@ template <class T, class Map> class Storage {
   std::vector<Map> data;
   size_t maxtime;
 
+  static_assert(std::is_base_of_v<LevelTSDB::Map<T>, Map>);
+
 public:
   Storage() {
     data.resize(64);
@@ -43,8 +45,17 @@ public:
     return query(l + p, r) + v;
   }
 
-  uint32_t &cacheMiss() { return data[0].cacheMiss(); }
-  const uint32_t &cacheMiss() const { return data[0].cacheMiss(); }
+  uint32_t cacheMiss() {
+    uint32_t sum = 0;
+    for (int i = 0; i < 64; i++)
+      sum += data[i].cacheMiss();
+    return sum;
+  }
+  void resetCacheMiss() {
+    for (int i = 0; i < 64; i++) {
+      data[i].cacheMiss() = 0;
+    }
+  }
 };
 
 } // namespace LevelTSDB
