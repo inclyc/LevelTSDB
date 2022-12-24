@@ -104,9 +104,17 @@ int main() {
   using LevelTSDB::Storage;
   std::cout << "Testing: ArrayMap<uint64_t, 1000>"
             << "\n";
+#ifdef DISK_SIM
+  Test<Storage<uint64_t, ArrayMap<uint64_t, 10000>>>::batchTest(6);
+#else
   Test<Storage<uint64_t, ArrayMap<uint64_t, 10000>>>::batchTest(9);
+#endif
   std::cout << "Testing: LruMap<uint64_t, 10000>>"
             << "\n";
+#ifdef DISK_SIM
+  Test<Storage<uint64_t, LruMap<uint64_t, 10000>>>::batchTest(6);
+#else
   Test<Storage<uint64_t, LruMap<uint64_t, 10000>>>::batchTest(8);
+#endif
   return 0;
 }

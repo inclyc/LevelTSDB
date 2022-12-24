@@ -41,5 +41,10 @@ add_compile_options(-Wall -Wextra -pedantic)
 
 include_directories(AFTER ${CMAKE_SOURCE_DIR}/include)
 
+# Control Disk Simulating mode
+if(DISK_SIM)
+  add_definitions(-DDISK_SIM)
+endif(DISK_SIM)
+
 add_subdirectory(lib)
 add_subdirectory(test)

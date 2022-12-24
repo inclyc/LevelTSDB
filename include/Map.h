@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <list>
 #include <unordered_map>
 #include <vector>
@@ -26,8 +27,13 @@ private:
       data.resize(2 * x);
       data[x] = T();
     }
-    if (data.size() > N && x < data.size() - N)
+    if (data.size() > N && x < data.size() - N) {
       _cacheMiss++;
+#ifdef DISK_SIM
+      const struct timespec delay = {0, 10};
+      nanosleep(&delay, nullptr);
+#endif
+    }
     return data[x];
   }
 
@@ -81,6 +87,10 @@ public:
     auto it = mp.find(key);
     if (it == mp.end()) {
       _cacheMiss++;
+#ifdef DISK_SIM
+      const struct timespec delay = {0, 10};
+      nanosleep(&delay, nullptr);
+#endif
       auto value = base.get(key);
       if (list.size() == cap) {
         base.set(list.back().key, list.back().value);
