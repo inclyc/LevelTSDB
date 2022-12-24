@@ -102,11 +102,14 @@ int main() {
   using LevelTSDB::LruMap;
   using LevelTSDB::Map;
   using LevelTSDB::Storage;
-  std::cout << "Testing: ArrayMap<uint64_t, 1000>"
-            << "\n";
-  Test<Storage<uint64_t, ArrayMap<uint64_t, 10000>>>::batchTest(9);
-  std::cout << "Testing: LruMap<uint64_t, 10000>>"
-            << "\n";
-  Test<Storage<uint64_t, LruMap<uint64_t, 10000>>>::batchTest(8);
+
+#define TEST_STORAGE(TYPE, BATCH)                                              \
+  std::cout << "Testing " #TYPE << "\n";                                       \
+  Test<TYPE>::batchTest(BATCH);                                                \
+  std::cout << "\n\n";
+#define SINGLE_ARG(...) __VA_ARGS__
+
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 9);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8);
   return 0;
 }
