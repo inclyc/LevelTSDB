@@ -41,5 +41,4 @@ add_compile_options(-Wall -Wextra -pedantic)
 
 include_directories(AFTER ${CMAKE_SOURCE_DIR}/include)
 
-add_subdirectory(lib)
 add_subdirectory(test)

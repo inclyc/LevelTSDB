@@ -1,5 +1,4 @@
 #include "Data.h"
-#include "Testing/Testing.h"
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -7,33 +6,16 @@
 #include <random>
 #include <sys/resource.h>
 
+using std::chrono::duration_cast;
+using std::chrono::nanoseconds;
 template <class S> class Test {
+
 public:
-  static void testCorrect(uint32_t numCases, int maxn, S &storage) {
-    std::random_device rd;  // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<uint64_t> distr(1, maxn); // define the range
-
-    for (uint32_t i = 0; i < numCases; i++) {
-      auto [l, r] = std::tuple{distr(gen), distr(gen)};
-      if (l > r)
-        std::swap(l, r);
-      else if (l == r)
-        continue;
-      if (storage.query(l, r) != (r - l) * (l + r - 1) / 2) {
-        std::cerr << "Failed :" << l << " " << r << std::endl;
-        exit(-1);
-      }
-    }
-    std::cout << "Correction test passed." << std::endl;
-  }
-
-  static void benchQuery(uint32_t numCases, int maxn, S &storage) {
+  [[nodiscard]] static std::vector<std::tuple<uint32_t, uint32_t>>
+  genTestCases(uint32_t numCases, uint32_t maxn) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> distr(1, maxn);
-
-    storage.resetCacheMiss();
 
     std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
@@ -47,52 +29,56 @@ public:
       }
       testCases.push_back({l, r});
     }
-    auto start = std::chrono::high_resolution_clock::now();
+
+    return testCases;
+  }
+  static void testCorrect(uint32_t numCases, uint32_t maxn, S &storage) {
+    auto testCases = genTestCases(numCases, maxn);
     for (auto [l, r] : testCases) {
-      storage.query(l, r);
+      auto left = storage.query(l, r);
+      auto right = static_cast<decltype(left)>((r - l)) * (l + r - 1) / 2;
+      if (left != right) {
+        std::cerr << "Failed: " << l << " " << r << std::endl;
+        std::cerr << "left: " << left << "right: " << right << std::endl;
+        exit(-1);
+      }
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = end - start;
-    std::cout << "Average time per query (ns): "
-              << static_cast<double>(
-                     std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         duration)
-                         .count()) /
-                     numCases
-              << std::endl;
-
-    std::cout << "Cache misses per query: "
-              << static_cast<double>(storage.cacheMiss()) / numCases
-              << std::endl;
   }
 
-  static S benchInsertion(int maxn) {
+  /// \returns time per query (ns), external invokes per query
+  [[nodiscard]] static std::tuple<double, double>
+  benchQuery(uint32_t numCases, uint32_t maxn, S &storage) {
+    storage.resetCacheMiss();
+    auto testCases = genTestCases(numCases, maxn);
+    auto start = std::chrono::high_resolution_clock::now();
+    for (auto [l, r] : testCases)
+      storage.query(l, r);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto nanoDuration = duration_cast<nanoseconds>(end - start).count();
+    return {static_cast<double>(nanoDuration) / numCases,
+            static_cast<double>(storage.cacheMiss()) / numCases};
+  }
+
+  /// \returns the storage and average time per insertion (ns)
+  [[nodiscard]] static std::tuple<S, double> benchInsertion(uint32_t maxn) {
     S storage;
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 1; i < maxn; i++) {
+    for (uint32_t i = 1; i < maxn; i++) {
       storage.insert(i);
     }
     auto end = std::chrono::high_resolution_clock::now();
-    auto duration = end - start;
-    std::cout << "Average time per insertion (ns): "
-              << static_cast<double>(
-                     std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         duration)
-                         .count()) /
-                     maxn
-              << std::endl;
-    return storage;
+    auto nanoDuration = duration_cast<nanoseconds>(end - start).count();
+    return {std::move(storage), static_cast<double>(nanoDuration) / maxn};
   }
 
-  static void batchTest(uint32_t scale) {
+  static void batchTest(uint32_t scale, const char *name) {
     for (uint32_t maxn = 100, log10 = 2; log10 < scale; log10++, maxn *= 10) {
-      std::cout << "Dataset size: " << maxn << std::endl;
-      auto storage = benchInsertion(maxn);
+      auto [storage, insertionTime] = benchInsertion(maxn);
       testCorrect(10000, maxn, storage);
-      benchQuery(10000, maxn, storage);
-      printMemoryUsage();
-      std::cout << std::endl;
+      auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
+      std::cout << insertionTime << "," << queryTime << "," << externalInvokes
+                << "," << maxn << "," << name << "\n";
     }
   }
 };
@@ -103,13 +89,18 @@ int main() {
   using LevelTSDB::Map;
   using LevelTSDB::Storage;
 
-#define TEST_STORAGE(TYPE, BATCH)                                              \
-  std::cout << "Testing " #TYPE << "\n";                                       \
-  Test<TYPE>::batchTest(BATCH);                                                \
-  std::cout << "\n\n";
+  std::cout
+      << "Insertion (ns), Query (ns), External Invokes, Dataset Size, Name"
+      << "\n";
+
+#define TEST_STORAGE(TYPE, BATCH) Test<TYPE>::batchTest(BATCH, #TYPE);
 #define SINGLE_ARG(...) __VA_ARGS__
 
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 9);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 100>>), 8);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 1000>>), 8);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 8);
+
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 1000>>), 8);
   TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8);
   return 0;
 }
