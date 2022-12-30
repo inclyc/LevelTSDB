@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <iostream>
 #include <random>
-#include <sys/resource.h>
 
 using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
