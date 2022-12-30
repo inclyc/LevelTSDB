@@ -1,0 +1,36 @@
+name: Meson
+
+on:
+  [push, pull_request]
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+        compiler: [g++, clang++]
+        exclude:
+          - os: windows-latest
+            compiler: clang
+
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup compiler
+      if: ${{ matrix.compiler != 'g++' }}
+      run: |
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+    - run: pip install meson ninja
+    - run: meson setup builddir/ --buildtype=release
+    - run: meson test -C builddir/ -v
+    - uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-testlog
+        path: builddir/meson-logs/testlog.txt
