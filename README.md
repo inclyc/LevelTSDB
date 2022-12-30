@@ -8,7 +8,4 @@
 
 ## Build this project
 
-```sh
-cmake -B build
-cmake --build build
-```
+This project uses the [meson](https://github.com/mesonbuild/meson/) build system. Detailed compilation commands are listed in their pages. 
