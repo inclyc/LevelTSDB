@@ -18,7 +18,7 @@ public:
 
 template <class T, int N = 999999> class ArrayMap : public Map<T> {
   std::vector<T> data;
-  uint32_t _cacheMiss;
+  uint32_t _externalAccesses;
 
 private:
   T &operator[](size_t x) {
@@ -27,16 +27,16 @@ private:
       data[x] = T();
     }
     if (data.size() > N && x < data.size() - N)
-      _cacheMiss++;
+      _externalAccesses++;
     return data[x];
   }
 
 public:
-  ArrayMap() : _cacheMiss(0) {}
+  ArrayMap() : _externalAccesses(0) {}
   T get(size_t x) { return this->operator[](x); }
   void set(size_t x, T value) { this->operator[](x) = value; }
-  uint32_t &cacheMiss() { return _cacheMiss; }
-  const uint32_t &cacheMiss() const { return _cacheMiss; }
+  uint32_t &externalAccesses() { return _externalAccesses; }
+  const uint32_t &externalAccesses() const { return _externalAccesses; }
 };
 
 template <class T, class B> class Lru {
@@ -49,7 +49,7 @@ private:
 
   size_t cap;
 
-  uint32_t _cacheMiss;
+  uint32_t _externalAccesses;
 
   std::list<Node> list;
   std::unordered_map<size_t, typename std::list<Node>::iterator> mp;
@@ -80,7 +80,7 @@ public:
   T get(size_t key) {
     auto it = mp.find(key);
     if (it == mp.end()) {
-      _cacheMiss++;
+      _externalAccesses++;
       auto value = base.get(key);
       if (list.size() == cap) {
         base.set(list.back().key, list.back().value);
@@ -99,8 +99,8 @@ public:
       return value;
     }
   }
-  uint32_t &cacheMiss() { return _cacheMiss; }
-  const uint32_t &cacheMiss() const { return _cacheMiss; }
+  uint32_t &externalAccesses() { return _externalAccesses; }
+  const uint32_t &externalAccesses() const { return _externalAccesses; }
 };
 
 template <class T, int N> class LruMap : public Map<T> {
@@ -109,8 +109,8 @@ template <class T, int N> class LruMap : public Map<T> {
 public:
   T get(size_t key) { return cache.get(key); }
   void set(size_t key, T value) { cache.set(key, value); }
-  uint32_t &cacheMiss() { return cache.cacheMiss(); }
-  const uint32_t &cacheMiss() const { return cache.cacheMiss(); }
+  uint32_t &externalAccesses() { return cache.externalAccesses(); }
+  const uint32_t &externalAccesses() const { return cache.externalAccesses(); }
 };
 
 }; // namespace LevelTSDB

@@ -44,10 +44,10 @@ public:
     }
   }
 
-  /// \returns time per query (ns), external invokes per query
+  /// \returns time per query (ns), external accesses per query
   [[nodiscard]] static std::tuple<double, double>
   benchQuery(uint32_t numCases, uint32_t maxn, S &storage) {
-    storage.resetCacheMiss();
+    storage.resetExternalAccesses();
     auto testCases = genTestCases(numCases, maxn);
     auto start = std::chrono::high_resolution_clock::now();
     for (auto [l, r] : testCases)
@@ -56,7 +56,7 @@ public:
     auto end = std::chrono::high_resolution_clock::now();
     auto nanoDuration = duration_cast<nanoseconds>(end - start).count();
     return {static_cast<double>(nanoDuration) / numCases,
-            static_cast<double>(storage.cacheMiss()) / numCases};
+            static_cast<double>(storage.externalAccesses()) / numCases};
   }
 
   /// \returns the storage and average time per insertion (ns)
@@ -77,7 +77,9 @@ public:
       testCorrect(10000, maxn, storage);
       auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
       std::cout << insertionTime << "," << queryTime << "," << externalInvokes
-                << "," << maxn << "," << name << "\n";
+                << "," << maxn << ","
+                << "\"" << name << "\""
+                << "\n";
     }
   }
 };
@@ -89,7 +91,7 @@ int main() {
   using LevelTSDB::Storage;
 
   std::cout
-      << "Insertion (ns), Query (ns), External Invokes, Dataset Size, Name"
+      << "Insertion (ns),Query (ns),Average External Accesses,Dataset Size,Name"
       << "\n";
 
 #define TEST_STORAGE(TYPE, BATCH) Test<TYPE>::batchTest(BATCH, #TYPE);

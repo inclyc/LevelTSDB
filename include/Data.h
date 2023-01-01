@@ -45,15 +45,15 @@ public:
     return query(l + p, r) + v;
   }
 
-  uint32_t cacheMiss() {
+  uint32_t externalAccesses() {
     uint32_t sum = 0;
     for (int i = 0; i < 64; i++)
-      sum += data[i].cacheMiss();
+      sum += data[i].externalAccesses();
     return sum;
   }
-  void resetCacheMiss() {
+  void resetExternalAccesses() {
     for (int i = 0; i < 64; i++) {
-      data[i].cacheMiss() = 0;
+      data[i].externalAccesses() = 0;
     }
   }
 };
