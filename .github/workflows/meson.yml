@@ -18,12 +18,12 @@ jobs:
 
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup compiler
       if: ${{ matrix.compiler != 'g++' }}
       run: |
         echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     - run: pip install meson ninja pipenv
