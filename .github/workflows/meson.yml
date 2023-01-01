@@ -26,7 +26,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: '3.x'
-    - run: pip install meson ninja
+    - run: pip install meson ninja pipenv
+    - run: pipenv install
     - run: meson setup builddir/ --buildtype=release
     - run: meson test -C builddir/ -v
     - uses: actions/upload-artifact@v1
@@ -34,3 +35,8 @@ jobs:
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-testlog
         path: builddir/meson-logs/testlog.txt
+    - run: builddir/test/test-storage | pipenv run python plot.py --output builddir/figure.pdf
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-result-figure.pdf
+        path: builddir/figure.pdf
