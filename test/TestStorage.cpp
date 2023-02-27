@@ -11,10 +11,10 @@ template <class S> class Test {
 
 public:
   [[nodiscard]] static std::vector<std::tuple<uint32_t, uint32_t>>
-  genTestCases(uint32_t numCases, uint32_t maxn) {
+  genTestCases(uint32_t numCases,
+               std::uniform_int_distribution<uint64_t> distr) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<uint64_t> distr(1, maxn);
 
     std::vector<std::tuple<uint32_t, uint32_t>> testCases;
 
@@ -31,8 +31,14 @@ public:
 
     return testCases;
   }
+
+  [[nodiscard]] static std::vector<std::tuple<uint32_t, uint32_t>>
+  genTestCasesUniform(uint32_t numCases, uint32_t maxn) {
+    return genTestCases(numCases,
+                        std::uniform_int_distribution<uint64_t>(1, maxn));
+  }
   static void testCorrect(uint32_t numCases, uint32_t maxn, S &storage) {
-    auto testCases = genTestCases(numCases, maxn);
+    auto testCases = genTestCasesUniform(numCases, maxn);
     for (auto [l, r] : testCases) {
       auto left = storage.query(l, r);
       auto right = static_cast<decltype(left)>((r - l)) * (l + r - 1) / 2;
@@ -48,7 +54,7 @@ public:
   [[nodiscard]] static std::tuple<double, double>
   benchQuery(uint32_t numCases, uint32_t maxn, S &storage) {
     storage.resetCacheMiss();
-    auto testCases = genTestCases(numCases, maxn);
+    auto testCases = genTestCasesUniform(numCases, maxn);
     auto start = std::chrono::high_resolution_clock::now();
     for (auto [l, r] : testCases)
       storage.query(l, r);
@@ -101,5 +107,8 @@ int main() {
 
   TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 1000>>), 8);
   TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8);
+
+  // Test for different disturbutions
+
   return 0;
 }
