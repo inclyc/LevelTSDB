@@ -98,7 +98,7 @@ int main() {
       << "Insertion (ns), Query (ns), External Invokes, Dataset Size, Name"
       << "\n";
 
-#define TEST_STORAGE(TYPE, BATCH) Test<TYPE>::batchTest(BATCH, #TYPE);
+#define TEST_STORAGE(TYPE, BATCH) Test<TYPE>::batchTest(BATCH, #TYPE)
 #define SINGLE_ARG(...) __VA_ARGS__
 
   TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 100>>), 8);

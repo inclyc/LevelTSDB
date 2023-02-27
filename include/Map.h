@@ -113,4 +113,4 @@ public:
   const uint32_t &cacheMiss() const { return cache.cacheMiss(); }
 };
 
-}; // namespace LevelTSDB
+} // namespace LevelTSDB
