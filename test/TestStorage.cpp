@@ -10,13 +10,13 @@ using std::chrono::nanoseconds;
 template <class S> class Test {
 
 public:
-  [[nodiscard]] static std::vector<std::tuple<uint32_t, uint32_t>>
+  [[nodiscard]] static auto
   genTestCases(uint32_t numCases,
-               std::uniform_int_distribution<uint64_t> distr) {
+               std::uniform_int_distribution<std::size_t> distr) {
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::vector<std::tuple<uint32_t, uint32_t>> testCases;
+    std::vector<std::tuple<std::size_t, std::size_t>> testCases;
 
     for (uint32_t i = 1; i <= numCases; i++) {
       auto [l, r] = std::tuple{distr(gen), distr(gen)};
@@ -32,12 +32,12 @@ public:
     return testCases;
   }
 
-  [[nodiscard]] static std::vector<std::tuple<uint32_t, uint32_t>>
-  genTestCasesUniform(uint32_t numCases, uint32_t maxn) {
+  [[nodiscard]] static auto genTestCasesUniform(uint32_t numCases,
+                                                std::size_t maxn) {
     return genTestCases(numCases,
-                        std::uniform_int_distribution<uint64_t>(1, maxn));
+                        std::uniform_int_distribution<std::size_t>(1, maxn));
   }
-  static void testCorrect(uint32_t numCases, uint32_t maxn, S &storage) {
+  static void testCorrect(uint32_t numCases, std::size_t maxn, S &storage) {
     auto testCases = genTestCasesUniform(numCases, maxn);
     for (auto [l, r] : testCases) {
       auto left = storage.query(l, r);
@@ -52,7 +52,7 @@ public:
 
   /// \returns time per query (ns), external invokes per query
   [[nodiscard]] static std::tuple<double, double>
-  benchQuery(uint32_t numCases, uint32_t maxn, S &storage) {
+  benchQuery(uint32_t numCases, std::size_t maxn, S &storage) {
     storage.resetCacheMiss();
     auto testCases = genTestCasesUniform(numCases, maxn);
     auto start = std::chrono::high_resolution_clock::now();
