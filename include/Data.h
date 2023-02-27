@@ -18,6 +18,7 @@ template <class T, class Map> class Storage {
   static_assert(std::is_base_of_v<LevelTSDB::Map<T>, Map>);
 
 public:
+  typedef T DataTy;
   Storage() {
     data.resize(64);
     maxtime = 1;

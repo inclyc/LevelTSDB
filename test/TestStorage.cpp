@@ -19,18 +19,38 @@ public:
 
   /// \returns If the result should be validated.
   virtual bool shouldValidate() = 0;
+
+  virtual ~ElementDistribution() = default;
 };
 
-template <class T> class NaturalNumbersDistribution : ElementDistribution<T> {
+template <class T>
+class NaturalNumbersDistribution : public ElementDistribution<T> {
+public:
   [[gnu::pure]] [[nodiscard]] T get(std::size_t x) override {
     return static_cast<T>(x);
   }
   [[gnu::pure]] [[nodiscard]] T sum(std::size_t l, std::size_t r) override {
     T ll = static_cast<T>(l);
     T rr = static_cast<T>(r);
-    return (rr - ll) * (rr + ll - 1);
+    return (rr - ll) * (rr + ll - 1) / 2;
   }
   [[gnu::pure]] bool shouldValidate() override { return true; }
+
+  virtual ~NaturalNumbersDistribution() = default;
+};
+
+template <class T> class RandomDistribution : public ElementDistribution<T> {
+public:
+  [[nodiscard]] T get(std::size_t x) override {
+    return static_cast<T>(rand() % x);
+  }
+  [[noreturn]] T sum([[maybe_unused]] std::size_t l,
+                     [[maybe_unused]] std::size_t r) override {
+    __builtin_unreachable();
+  }
+  [[gnu::pure]] bool shouldValidate() override { return false; }
+
+  virtual ~RandomDistribution() = default;
 };
 
 [[nodiscard]] auto
@@ -64,11 +84,12 @@ genTestCases(uint32_t numCases,
 template <class S> class Test {
 
 public:
-  static void testCorrect(uint32_t numCases, std::size_t maxn, S &storage) {
+  static void validate(uint32_t numCases, std::size_t maxn, S &storage,
+                       ElementDistribution<typename S::DataTy> &ED) {
     auto testCases = genTestCasesUniform(numCases, maxn);
     for (auto [l, r] : testCases) {
       auto left = storage.query(l, r);
-      auto right = static_cast<decltype(left)>((r - l)) * (l + r - 1) / 2;
+      auto right = ED.sum(l, r);
       if (left != right) {
         std::cerr << "Failed: " << l << " " << r << std::endl;
         std::cerr << "left: " << left << "right: " << right << std::endl;
@@ -93,21 +114,24 @@ public:
   }
 
   /// \returns the storage and average time per insertion (ns)
-  [[nodiscard]] static std::tuple<S, double> benchInsertion(uint32_t maxn) {
+  [[nodiscard]] static std::tuple<S, double>
+  benchInsertion(uint32_t maxn, ElementDistribution<typename S::DataTy> &ED) {
     S storage;
     auto start = std::chrono::high_resolution_clock::now();
     for (uint32_t i = 1; i < maxn; i++) {
-      storage.insert(i);
+      storage.insert(ED.get(i));
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto nanoDuration = duration_cast<nanoseconds>(end - start).count();
     return {std::move(storage), static_cast<double>(nanoDuration) / maxn};
   }
 
-  static void batchTest(uint32_t scale, const char *name) {
+  static void batchTest(uint32_t scale, const char *name,
+                        ElementDistribution<typename S::DataTy> &ED) {
     for (uint32_t maxn = 100, log10 = 2; log10 < scale; log10++, maxn *= 10) {
-      auto [storage, insertionTime] = benchInsertion(maxn);
-      testCorrect(10000, maxn, storage);
+      auto [storage, insertionTime] = benchInsertion(maxn, ED);
+      if (ED.shouldValidate())
+        validate(10000, maxn, storage, ED);
       auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
       std::cout << insertionTime << "," << queryTime << "," << externalInvokes
                 << "," << maxn << "," << name << "\n";
@@ -127,17 +151,29 @@ int main() {
       << "Insertion (ns), Query (ns), External Invokes, Dataset Size, Name"
       << "\n";
 
-#define TEST_STORAGE(TYPE, BATCH) Test<TYPE>::batchTest(BATCH, #TYPE)
+#define TEST_STORAGE(TYPE, BATCH, ED) Test<TYPE>::batchTest(BATCH, #TYPE, ED)
 #define SINGLE_ARG(...) __VA_ARGS__
 
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 100>>), 8);
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 1000>>), 8);
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 8);
+  auto ED = NaturalNumbersDistribution<uint64_t>();
 
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 1000>>), 8);
-  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 100>>), 8, ED);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 1000>>), 8, ED);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 8, ED);
+
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 1000>>), 8, ED);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8, ED);
 
   // Test for different disturbutions
+
+  auto ED2 = RandomDistribution<uint64_t>();
+
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 100>>), 8, ED2);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 1000>>), 8, ED2);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, ArrayMap<uint64_t, 10000>>), 8,
+               ED2);
+
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 1000>>), 8, ED2);
+  TEST_STORAGE(SINGLE_ARG(Storage<uint64_t, LruMap<uint64_t, 10000>>), 8, ED2);
 
   return 0;
 }
