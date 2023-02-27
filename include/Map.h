@@ -63,10 +63,10 @@ public:
     auto it = mp.find(key);
     if (it == mp.end()) {
       if (list.size() == cap) {
-        auto key = list.back().key;
-        auto value = list.back().value;
-        mp.erase(key);
-        base.set(key, value);
+        auto bKey = list.back().key;
+        auto bValue = list.back().value;
+        mp.erase(bKey);
+        base.set(bKey, bValue);
         list.pop_back();
       }
       list.push_front(Node(key, value));
