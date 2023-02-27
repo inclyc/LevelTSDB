@@ -7,36 +7,63 @@
 
 using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
+namespace {
+
+template <class T> class ElementDistribution {
+public:
+  /// \returns The element at timestamp "x".
+  virtual T get(std::size_t x) = 0;
+
+  /// \returns The sum between [l, r) for validator.
+  virtual T sum(std::size_t l, std::size_t r) = 0;
+
+  /// \returns If the result should be validated.
+  virtual bool shouldValidate() = 0;
+};
+
+template <class T> class NaturalNumbersDistribution : ElementDistribution<T> {
+  [[gnu::pure]] [[nodiscard]] T get(std::size_t x) override {
+    return static_cast<T>(x);
+  }
+  [[gnu::pure]] [[nodiscard]] T sum(std::size_t l, std::size_t r) override {
+    T ll = static_cast<T>(l);
+    T rr = static_cast<T>(r);
+    return (rr - ll) * (rr + ll - 1);
+  }
+  [[gnu::pure]] bool shouldValidate() override { return true; }
+};
+
+[[nodiscard]] auto
+genTestCases(uint32_t numCases,
+             std::uniform_int_distribution<std::size_t> distr) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  std::vector<std::tuple<std::size_t, std::size_t>> testCases;
+
+  for (uint32_t i = 1; i <= numCases; i++) {
+    auto [l, r] = std::tuple{distr(gen), distr(gen)};
+    if (l > r) {
+      std::swap(l, r);
+    } else if (l == r) {
+      i--;
+      continue;
+    }
+    testCases.push_back({l, r});
+  }
+
+  return testCases;
+}
+
+[[nodiscard]] static auto genTestCasesUniform(uint32_t numCases,
+                                              std::size_t maxn) {
+  return genTestCases(numCases,
+                      std::uniform_int_distribution<std::size_t>(1, maxn));
+}
+
 template <class S> class Test {
 
 public:
-  [[nodiscard]] static auto
-  genTestCases(uint32_t numCases,
-               std::uniform_int_distribution<std::size_t> distr) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    std::vector<std::tuple<std::size_t, std::size_t>> testCases;
-
-    for (uint32_t i = 1; i <= numCases; i++) {
-      auto [l, r] = std::tuple{distr(gen), distr(gen)};
-      if (l > r) {
-        std::swap(l, r);
-      } else if (l == r) {
-        i--;
-        continue;
-      }
-      testCases.push_back({l, r});
-    }
-
-    return testCases;
-  }
-
-  [[nodiscard]] static auto genTestCasesUniform(uint32_t numCases,
-                                                std::size_t maxn) {
-    return genTestCases(numCases,
-                        std::uniform_int_distribution<std::size_t>(1, maxn));
-  }
   static void testCorrect(uint32_t numCases, std::size_t maxn, S &storage) {
     auto testCases = genTestCasesUniform(numCases, maxn);
     for (auto [l, r] : testCases) {
@@ -87,6 +114,8 @@ public:
     }
   }
 };
+
+} // namespace
 
 int main() {
   using LevelTSDB::ArrayMap;
