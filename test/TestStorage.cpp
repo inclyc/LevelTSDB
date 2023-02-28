@@ -134,7 +134,9 @@ public:
         validate(10000, maxn, storage, ED);
       auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
       std::cout << insertionTime << "," << queryTime << "," << externalInvokes
-                << "," << maxn << "," << name << "\n";
+                << "," << maxn << ","
+                << "\"" << name << "\""
+                << "\n";
     }
   }
 };
@@ -148,7 +150,7 @@ int main() {
   using LevelTSDB::Storage;
 
   std::cout
-      << "Insertion (ns), Query (ns), External Invokes, Dataset Size, Name"
+      << "Insertion (ns),Query (ns),External Invokes,Dataset Size,Name"
       << "\n";
 
 #define TEST_STORAGE(TYPE, BATCH, ED) Test<TYPE>::batchTest(BATCH, #TYPE, ED)
