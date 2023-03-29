@@ -163,12 +163,14 @@ public:
   [[nodiscard]] static std::tuple<S, double>
   benchInsertion(uint32_t maxn, ElementDistribution<typename S::DataTy> &ED) {
     S storage;
-    auto start = std::chrono::high_resolution_clock::now();
+    double nanoDuration = 0;
     for (uint32_t i = 1; i < maxn; i++) {
-      storage.insert(ED.get(i));
+      auto data = ED.get(i);
+      auto start = std::chrono::high_resolution_clock::now();
+      storage.insert(data);
+      auto end = std::chrono::high_resolution_clock::now();
+      nanoDuration += duration_cast<nanoseconds>(end - start).count();
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto nanoDuration = duration_cast<nanoseconds>(end - start).count();
     return {std::move(storage), static_cast<double>(nanoDuration) / maxn};
   }
   template <class ED_TYPE>
