@@ -44,7 +44,7 @@ private:
   struct Node {
     size_t key;
     T value;
-    Node(size_t key, T value) : key(key), value(value) {}
+    Node(size_t _key, T _value) : key(_key), value(_value) {}
   };
 
   size_t cap;
@@ -58,7 +58,7 @@ private:
   B base;
 
 public:
-  Lru(size_t cap) : cap(cap) {}
+  Lru(size_t _cap) : cap(_cap) {}
   void set(size_t key, const T value) {
     auto it = mp.find(key);
     if (it == mp.end()) {
