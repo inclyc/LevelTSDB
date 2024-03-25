@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <ctime>
 #include <fstream>
 #include <sstream>
@@ -43,7 +44,7 @@ public:
 
   virtual ~ElementDistribution() = default;
 };
-template <uint Pos> class Jena : public ElementDistribution<double> {
+template <uint32_t Pos> class Jena : public ElementDistribution<double> {
   static_assert(Pos <= 13, "Element position excceed");
 
 public:
