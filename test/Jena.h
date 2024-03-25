@@ -30,7 +30,22 @@ struct JenaEntry {
   };
 */
 
-class Jena {
+template <class T> class ElementDistribution {
+public:
+  /// \returns The element at timestamp "x".
+  virtual T get(std::size_t x) = 0;
+
+  /// \returns The sum between [l, r) for validator.
+  virtual T sum(std::size_t l, std::size_t r) = 0;
+
+  /// \returns If the result should be validated.
+  virtual bool shouldValidate() = 0;
+
+  virtual ~ElementDistribution() = default;
+};
+template <uint Pos> class Jena : public ElementDistribution<double> {
+  static_assert(Pos <= 14, "Element position excceed");
+
 public:
   Jena(const std::string &path) {
     std::ifstream file(path);
@@ -56,33 +71,14 @@ public:
       data.push_back(tmp);
     }
   }
-
-private:
-  std::vector<JenaEntry> data;
-};
-
-template <class T> class ElementDistribution {
-public:
-  /// \returns The element at timestamp "x".
-  virtual T get(std::size_t x) = 0;
-
-  /// \returns The sum between [l, r) for validator.
-  virtual T sum(std::size_t l, std::size_t r) = 0;
-
-  /// \returns If the result should be validated.
-  virtual bool shouldValidate() = 0;
-
-  virtual ~ElementDistribution() = default;
-};
-class JenaDegree : public ElementDistribution<float> {
-public:
-  [[nodiscard]] float get(std::size_t x [[maybe_unused]]) override { return 0; }
-  [[noreturn]] float sum([[maybe_unused]] std::size_t l,
-                         [[maybe_unused]] std::size_t r) override {
+  [[nodiscard]] double get(std::size_t x) override { return data[x][Pos]; }
+  [[noreturn]] double sum([[maybe_unused]] std::size_t l,
+                          [[maybe_unused]] std::size_t r) override {
     __builtin_unreachable();
   }
   [[gnu::pure]] bool shouldValidate() override { return false; }
 
-  virtual ~JenaDegree() = default;
+private:
+  std::vector<JenaEntry> data;
 };
 } // namespace Jena
