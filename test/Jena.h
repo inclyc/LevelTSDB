@@ -44,7 +44,7 @@ public:
   virtual ~ElementDistribution() = default;
 };
 template <uint Pos> class Jena : public ElementDistribution<double> {
-  static_assert(Pos <= 14, "Element position excceed");
+  static_assert(Pos <= 13, "Element position excceed");
 
 public:
   Jena(const std::string &path) {
