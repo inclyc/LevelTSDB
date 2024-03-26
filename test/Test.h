@@ -16,6 +16,10 @@ using std::chrono::nanoseconds;
   Test<TYPE>::batchTest<ED_TYPE>(BATCH, #TYPE, #ED_TYPE)
 #define SINGLE_ARG(...) __VA_ARGS__
 
+#define TEST_DATASET(TYPE, DS_TYPE)                                            \
+  Test<TYPE>::onSetTest<DS_TYPE>(#TYPE, #DS_TYPE)
+#define SINGLE_ARG(...) __VA_ARGS__
+
 namespace LevelTSDB {
 
 [[nodiscard]] static auto
@@ -101,12 +105,19 @@ public:
         validate(10000, maxn, storage, ED);
       auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
       std::cout << insertionTime << "," << queryTime << "," << externalInvokes
-                << "," << maxn << ","
-                << "\"" << name << "\""
-                << ","
-                << "\"" << ed_type << "\""
-                << "\n";
+                << "," << maxn << "," << "\"" << name << "\"" << "," << "\""
+                << ed_type << "\"" << "\n";
     }
+  }
+  template <class DS_TYPE>
+  static void onSetTest(const char *name, const char *ds_type) {
+    DS_TYPE DS;
+    auto maxn = DS.size();
+    auto [storage, insertionTime] = benchInsertion(maxn, DS);
+    auto [queryTime, externalInvokes] = benchQuery(10000, maxn, storage);
+    std::cout << insertionTime << "," << queryTime << "," << externalInvokes
+              << "," << maxn << "," << "\"" << name << "\"" << "," << "\""
+              << ds_type << "\"" << "\n";
   }
 };
 

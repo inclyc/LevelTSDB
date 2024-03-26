@@ -1,12 +1,15 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <ctime>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "DataSet.h"
 
 namespace Jena {
 
@@ -31,25 +34,13 @@ struct JenaEntry {
   };
 */
 
-template <class T> class ElementDistribution {
-public:
-  /// \returns The element at timestamp "x".
-  virtual T get(std::size_t x) = 0;
-
-  /// \returns The sum between [l, r) for validator.
-  virtual T sum(std::size_t l, std::size_t r) = 0;
-
-  /// \returns If the result should be validated.
-  virtual bool shouldValidate() = 0;
-
-  virtual ~ElementDistribution() = default;
-};
-template <uint32_t Pos> class Jena : public ElementDistribution<double> {
+template <uint32_t Pos, const char *Path>
+class Jena : public LevelTSDB::DataSet<double> {
   static_assert(Pos <= 13, "Element position excceed");
 
 public:
-  Jena(const std::string &path) {
-    std::ifstream file(path);
+  Jena() {
+    std::ifstream file(Path);
     std::string line;
     auto split = [](const std::string &s, char delimiter) {
       std::vector<std::string> tokens;
@@ -77,6 +68,7 @@ public:
                           [[maybe_unused]] std::size_t r) override {
     __builtin_unreachable();
   }
+  [[nodiscard]] std::size_t size() override { return data.size(); }
   [[gnu::pure]] bool shouldValidate() override { return false; }
 
 private:
